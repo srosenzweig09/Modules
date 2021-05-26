@@ -2,7 +2,6 @@
 # eta*, phi* = calcStar()
 
 import numpy as np
-import awkward0
 
 z_ME2 = 808 # cm
 

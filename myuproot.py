@@ -1,20 +1,22 @@
 ## Open ROOT files using uproot without having to go through the entire rigamaroll each time (load file, get branches, convert to arrays)
 
-import uproot3
-import awkward0
+import uproot
 import numpy as np
 
-def open_up(filename, tree_name='sixBtree'):
+def open_up(filename, tree_name='sixBtree', open_tree=True):
     """Opens a ROOT file using uproot and prints branch names.
     """
-    f = uproot3.open(filename)
-        
-    tree     = f[tree_name]
-    branches = tree.arrays(namedecode='utf-8')
-    table    = awkward0.Table(branches)
+    
+    if open_tree:
+        tree = uproot.open(filename+':'+tree_name)
+    else:
+        file = uproot.open(filename)
+        tree = file[tree_name]
 
+    table = tree.arrays()
+    nptab = tree.arrays(library='np')
     ncols = 3
-    keys  = table.columns
+    keys  = tree.keys()
     n     = len(keys)
     modu  = n%ncols
     
@@ -34,4 +36,4 @@ def open_up(filename, tree_name='sixBtree'):
         print(row)
     print("-"*100)
 
-    return table
+    return tree, table, nptab
