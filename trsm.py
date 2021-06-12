@@ -1,5 +1,10 @@
 """
-This will be a class that collects the six bs from the signal event and returns their p4s.
+trsm_combos is a class that ...
+
+
+
+
+
 """
 
 # from particle import Particle
@@ -26,6 +31,7 @@ class trsm_combos():
 
     # b_mass = Particle.from_pdgid(5).mass / 1000 # Convert from MeV to GeV
 
+    ## Open ROOT file
     def __init__(self, filename):
 
         info(f"Opening ROOT file {filename} with columns")
@@ -44,6 +50,7 @@ class trsm_combos():
         self.jet_m    = np_table['jet_m']
         self.jet_btag = np_table['jet_btag']
     
+    ## Build p4 for all events
     def build_p4(self, filename=None):
 
         signal_builder = ak.ArrayBuilder()
@@ -63,6 +70,9 @@ class trsm_combos():
         available_bkgd  = []
 
         n_background = []
+
+        mask_7 = []
+        mask_8 = []
 
         pass_count = 0
 
@@ -85,6 +95,8 @@ class trsm_combos():
             if len(np.unique(jet_idx[evt][signal_mask])) < len(jet_idx[evt][signal_mask]): continue
             
             if (n_bkgd < 1): continue
+            elif (n_bkgd == 1): mask_7.append(evt)
+            elif (n_bkgd == 2): mask_8.append(evt)
             available_bkgd.append(n_bkgd)
             
             bkgd_ind = np.arange(1,n_bkgd)
@@ -183,6 +195,8 @@ class trsm_combos():
         self.bkgd = np.array((available_bkgd))
 
         self.n_bkgd = np.array((n_background))
+        self.mask_7 = np.array((mask_7))
+        self.mask_8 = np.array((mask_8))
 
     def construct_features(self):
 
