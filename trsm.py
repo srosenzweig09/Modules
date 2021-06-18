@@ -246,9 +246,20 @@ class trsm_combos():
         jet_phi  = self.jet_phi
         jet_m    = self.jet_m
         jet_btag = self.jet_btag
+        jet_qgl  = self.jet_qgl
+        jet_partonFlav = self.jet_partonFlav
+        jet_hadronFlav = self.jet_hadronFlav
 
         combo_btag = []
         evt_tag = []
+
+        swapped_bkgd_ind = []
+        swapped_bkgd_partonFlav = []
+        swapped_bkgd_hadronFlav = []
+
+        swapped_sgnl_ind = []
+        swapped_sgnl_partonFlav = []
+        swapped_sgnl_hadronFlav = []
 
         counter = 0
         
@@ -274,11 +285,13 @@ class trsm_combos():
 
             if n_bkgd > n - k:
                 if n-k == 1:
-                    n_mask = np.append(signal_mask, random.choice(background_mask))
+                    rand_bkgd_ind =random.choice(background_mask)
+                    n_mask = np.append(signal_mask, rand_bkgd_ind)
                 else:
                     try:
                         r = n - k
-                        n_mask = np.append(signal_mask, random.choices(background_mask, k=r))
+                        rand_bkgd_ind = random.choices(background_mask
+                        n_mask = np.append(signal_mask, rand_bkgd_ind, k=r))
                     except:
                         print(signal_mask)
                         print(r)
@@ -289,6 +302,8 @@ class trsm_combos():
 
             N_jets = np.arange(len(jet_pt[evt]))
 
+
+
             jet_combos  = list(itertools.combinations(N_jets[n_mask], k))
             pt_combos   = list(itertools.combinations(jet_pt[evt][n_mask], k))
             eta_combos  = list(itertools.combinations(jet_eta[evt][n_mask], k))
@@ -298,16 +313,18 @@ class trsm_combos():
             idx_combos  = list(itertools.combinations(jet_idx[evt][n_mask], k))
             
             signal_flag = False
-            # print("jet_idx[evt][signal_mask]",np.sort(jet_idx[evt][signal_mask]))
-            for pt, eta, phi, m, btag, idx in zip(pt_combos, eta_combos, phi_combos, m_combos, btag_combos, idx_combos):
+            for pt, eta, phi, m, btag, idx, jet_ind in zip(pt_combos, eta_combos, phi_combos, m_combos, btag_combos, idx_combos, jet_combos):
 
-                # print("np.sort(np.asarray(idx))",np.sort(np.asarray(idx)))
-                # print(np.array_equal(np.sort(np.asarray(idx)), np.sort(jet_idx[evt][signal_mask])))
 
                 if np.array_equal(np.sort(np.asarray(idx)), np.sort(jet_idx[evt][signal_mask])):
                     evt_tag.append(True)
                     signal_flag = True
                 else:
+                    unmatched = np.array(([i for i,(ind, sig_idx) in enumerate(zip(jet_ind,idx)) where sig_idx == -1]))
+
+                    swapped_bkgd_idx.append(unmatched)
+                    swapped_bkgd_partonFlav.append(jet_partonFlav[unmatched])
+                    swapped_bkgd_hadronFlav.append(jet_hadronFlav[unmatched])
                     evt_tag.append(False)
   
                 sort_mask = np.array((np.argsort(pt)[::-1]))
@@ -347,4 +364,4 @@ class trsm_combos():
 
         print(f"Total events chosen: {counter}")
 
-        return evt_tag, combo_features
+        return combo_features, evt_tag
