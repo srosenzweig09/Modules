@@ -10,6 +10,7 @@ trsm_combos is a class that ...
 # from particle import Particle
 import awkward as ak
 import itertools
+from math import comb
 import numpy as np
 import random
 import vector
@@ -25,7 +26,13 @@ def get_evt_p4(p4, num=6):
     combos = ak.combinations(p4, num)
     part0, part1, part2, part3, part4, part5 = ak.unzip(combos)
     evt_p4 = part0 + part1 + part2 + part3 + part4 + part5
-    return evt_p4
+    boost_0 = part0.boost_p4(evt_p4)
+    boost_1 = part1.boost_p4(evt_p4)
+    boost_2 = part2.boost_p4(evt_p4)
+    boost_3 = part3.boost_p4(evt_p4)
+    boost_4 = part4.boost_p4(evt_p4)
+    boost_5 = part5.boost_p4(evt_p4)
+    return evt_p4, boost_0, boost_1, boost_2, boost_3, boost_4, boost_5
 
 class trsm_combos():
 
@@ -49,6 +56,9 @@ class trsm_combos():
         self.jet_phi  = np_table['jet_phi']
         self.jet_m    = np_table['jet_m']
         self.jet_btag = np_table['jet_btag']
+        self.jet_qgl  = np_table['jet_qgl']
+        self.jet_partonFlav = np_table['jet_partonFlav']
+        self.jet_hadronFlav = np_table['jet_hadronFlav']
     
     ## Build p4 for all events
     def build_p4(self, filename=None):
@@ -62,6 +72,9 @@ class trsm_combos():
         jet_phi  = self.jet_phi
         jet_m    = self.jet_m
         jet_btag = self.jet_btag
+        jet_qgl  = self.jet_qgl
+        jet_partonFlav = self.jet_partonFlav
+        jet_hadronFlav = self.jet_hadronFlav
 
         signal_idx  = []
         signal_btag = []
@@ -95,8 +108,6 @@ class trsm_combos():
             if len(np.unique(jet_idx[evt][signal_mask])) < len(jet_idx[evt][signal_mask]): continue
             
             if (n_bkgd < 1): continue
-            elif (n_bkgd == 1): mask_7.append(evt)
-            elif (n_bkgd == 2): mask_8.append(evt)
             available_bkgd.append(n_bkgd)
             
             bkgd_ind = np.arange(1,n_bkgd)
@@ -186,8 +197,8 @@ class trsm_combos():
         self.sgnl_p4 = signal_builder.snapshot()
         self.bkgd_p4 = bkgd_builder.snapshot()
 
-        self.sgnl_evt_p4 = get_evt_p4(self.sgnl_p4)
-        self.bkgd_evt_p4 = get_evt_p4(self.bkgd_p4)
+        self.sgnl_evt_p4, *self.sgnl_boosted = get_evt_p4(self.sgnl_p4)
+        self.bkgd_evt_p4, *self.bkgd_boosted = get_evt_p4(self.bkgd_p4)
 
         self.signal_idx = np.array((signal_idx))
         self.signal_btag = np.array((signal_btag))
@@ -195,47 +206,33 @@ class trsm_combos():
         self.bkgd = np.array((available_bkgd))
 
         self.n_bkgd = np.array((n_background))
-        self.mask_7 = np.array((mask_7))
-        self.mask_8 = np.array((mask_8))
 
-    def construct_features(self):
+    def construct_features(self, combo_p4, combo_btag, boosted):
 
         inputs = []
 
-        info("Preparing signal training example inputs.")
-        for p4, btag, evt_p4 in zip(self.sgnl_p4, self.signal_btag, self.sgnl_evt_p4):
-            in_arr = [p4.pt, p4.eta, p4.phi, btag, p4.boost_p4(evt_p4).pt]
-            inputs.append(in_arr)
+        combo_pt = np.asarray(combo_p4.pt)
+        combo_eta = np.asarray(combo_p4.eta)
+        combo_phi = np.asarray(combo_p4.phi)
+        boosted_pt = []
 
-        info("Preparing background training example inputs.")
-        for p4, btag, evt_p4 in zip(self.bkgd_p4, self.bkgd_btag, self.bkgd_evt_p4):
-            in_arr = [p4.pt, p4.eta, p4.phi, btag, p4.boost_p4(evt_p4).pt]
-            inputs.append(in_arr)
+        for boost in boosted:
+            boosted_pt.append(boost.pt)
+        boosted_pt = np.asarray(boosted_pt)
 
-        for i,features in enumerate(inputs):
-            inputs[i] = np.concatenate((features))
-
-        inputs = np.array((inputs))
-        print(inputs.shape)
+        inputs = np.column_stack((combo_pt, combo_eta, combo_phi, combo_btag, boosted_pt[0,:], boosted_pt[1,:], boosted_pt[2,:], boosted_pt[3,:], boosted_pt[4,:], boosted_pt[5,:]))
+        print(f"Input shape = {inputs.shape}")
 
         return inputs
 
+    def construct_training_features(self):
 
-    def construct_combo_features(self, combo_p4, combo_btag, combo_evt_p4):
+        sgnl_inputs = self.construct_features(self.sgnl_p4, self.signal_btag, self.sgnl_boosted)
 
-        inputs = []
+        bkgd_inputs = self.construct_features(self.bkgd_p4, self.bkgd_btag, self.bkgd_boosted)
 
-        info("Preparing combo inputs.")
-        info(f"Looping over {len(combo_p4)} events.")
-        for p4, btag, evt_p4 in tqdm(zip(combo_p4, combo_btag, combo_evt_p4)):
-            in_arr = [p4.pt, p4.eta, p4.phi, btag, p4.boost_p4(evt_p4).pt]
-            inputs.append(in_arr)
-
-        for i,features in enumerate(inputs):
-            inputs[i] = np.concatenate((features))
-
-        inputs = np.array((inputs))
-        print(inputs.shape)
+        inputs = np.concatenate((sgnl_inputs, bkgd_inputs))
+        print(f"Input shape = {inputs.shape}")
 
         return inputs
         
@@ -251,6 +248,9 @@ class trsm_combos():
         jet_btag = self.jet_btag
 
         combo_btag = []
+        evt_tag = []
+
+        counter = 0
         
         for evt in tqdm(range(self.nevents)):
 
@@ -269,24 +269,44 @@ class trsm_combos():
             # Skip any events with duplicate matches (for now)
             if len(np.unique(jet_idx[evt][signal_mask])) < len(jet_idx[evt][signal_mask]): continue
             
-            if (n_bkgd < n - k): continue
+            if (n_bkgd < n - k) or (n_bkgd == 0): continue
+            counter += 1
 
-            bkgd_ind = np.arange(1,n_bkgd)
-            sgnl_ind = np.arange(0,k)
+            if n_bkgd > n - k:
+                if n-k == 1:
+                    n_mask = np.append(signal_mask, random.choice(background_mask))
+                else:
+                    try:
+                        r = n - k
+                        n_mask = np.append(signal_mask, random.choices(background_mask, k=r))
+                    except:
+                        print(signal_mask)
+                        print(r)
+                        print(background_mask)
+                        print(random.choices(background_mask, k=r))
+            else:
+                n_mask = np.arange(n)
 
-            pt_combos   = list(itertools.combinations(jet_pt[evt], k))
-            eta_combos  = list(itertools.combinations(jet_eta[evt], k))
-            phi_combos  = list(itertools.combinations(jet_phi[evt], k))
-            m_combos    = list(itertools.combinations(jet_m[evt], k))
-            btag_combos = list(itertools.combinations(jet_btag[evt], k))
-            idx_combos  = list(itertools.combinations(jet_idx[evt], k))
+            N_jets = np.arange(len(jet_pt[evt]))
 
-            evt_tag = []
+            jet_combos  = list(itertools.combinations(N_jets[n_mask], k))
+            pt_combos   = list(itertools.combinations(jet_pt[evt][n_mask], k))
+            eta_combos  = list(itertools.combinations(jet_eta[evt][n_mask], k))
+            phi_combos  = list(itertools.combinations(jet_phi[evt][n_mask], k))
+            m_combos    = list(itertools.combinations(jet_m[evt][n_mask], k))
+            btag_combos = list(itertools.combinations(jet_btag[evt][n_mask], k))
+            idx_combos  = list(itertools.combinations(jet_idx[evt][n_mask], k))
             
+            signal_flag = False
+            # print("jet_idx[evt][signal_mask]",np.sort(jet_idx[evt][signal_mask]))
             for pt, eta, phi, m, btag, idx in zip(pt_combos, eta_combos, phi_combos, m_combos, btag_combos, idx_combos):
-                
-                if set(idx) == set(signal_mask):
+
+                # print("np.sort(np.asarray(idx))",np.sort(np.asarray(idx)))
+                # print(np.array_equal(np.sort(np.asarray(idx)), np.sort(jet_idx[evt][signal_mask])))
+
+                if np.array_equal(np.sort(np.asarray(idx)), np.sort(jet_idx[evt][signal_mask])):
                     evt_tag.append(True)
+                    signal_flag = True
                 else:
                     evt_tag.append(False)
   
@@ -310,12 +330,21 @@ class trsm_combos():
                             combo_builder.field("eta"); combo_builder.real(eta)
                             combo_builder.field("phi"); combo_builder.real(phi)
                             combo_builder.field("m"); combo_builder.real(m)
+            assert signal_flag, print(f"evt = {evt}\nn mask = {n_mask}\njet_idx[evt][signal_mask] = {jet_idx[evt][signal_mask]}\nidx_combos = {idx_combos}")
+
 
         combos_builder = combo_builder.snapshot()
-        combo_evt_p4 = get_evt_p4(combos_builder)
+        combo_evt_p4, boost_0, boost_1, boost_2, boost_3, boost_4, boost_5 = get_evt_p4(combos_builder)
         evt_tag = np.array((evt_tag))
+
         combo_btag = np.array((combo_btag))
+        boosted = [boost_0, boost_1, boost_2, boost_3, boost_4, boost_5]
 
-        combo_features = self.construct_combo_features(combos_builder, combo_btag, combo_evt_p4)
+        combo_features = self.construct_features(combos_builder, combo_btag, boosted)
 
-        return combo_builder, evt_tag, combo_features
+        assert len(evt_tag) == counter*comb(n,k), print(len(evt_tag), counter*comb(n,k))
+        assert np.sum(evt_tag) == counter, print(np.sum(evt_tag*1),counter, evt_tag)
+
+        print(f"Total events chosen: {counter}")
+
+        return evt_tag, combo_features
