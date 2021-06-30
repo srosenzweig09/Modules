@@ -2,6 +2,7 @@
 
 import uproot
 import numpy as np
+from logger import info
 
 def open_up(filename, tree_name='sixBtree', open_tree=True):
     """Opens a ROOT file using uproot and prints branch names.
@@ -15,11 +16,13 @@ def open_up(filename, tree_name='sixBtree', open_tree=True):
 
     table = tree.arrays()
     nptab = tree.arrays(library='np')
+    nevents = len(table)
     ncols = 3
     keys  = tree.keys()
     n     = len(keys)
     modu  = n%ncols
     
+    info(f"Tree contains {nevents} events.")
     print("-"*100)
     print(" "*44 + "TABLE COLUMNS" + " "*43)
     print("-"*100)
