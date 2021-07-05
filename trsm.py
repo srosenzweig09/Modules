@@ -129,6 +129,7 @@ class training(TRSM):
         jet_qgl        = trsm.jet_qgl
         jet_partonFlav = trsm.jet_partonFlav
         jet_hadronFlav = trsm.jet_hadronFlav
+        self.nevents   = trsm.nevents
 
         signal_idx  = []
         signal_btag = []
@@ -260,6 +261,8 @@ class training(TRSM):
 
         self.n_bkgd = np.array((n_background))
 
+        self.inputs = self.construct_training_features()
+
     def construct_training_features(self):
 
         sgnl_inputs = self.construct_features(self.sgnl_p4, self.signal_btag, self.sgnl_boosted)
@@ -371,18 +374,27 @@ class combos(TRSM):
 
             N_jets = np.arange(len(evt_pt))
 
-            jet_combos  = list(itertools.combinations(N_jets[swap_mask], k))
-            pt_combos   = list(itertools.combinations(evt_pt[swap_mask], k))
-            eta_combos  = list(itertools.combinations(evt_eta[swap_mask], k))
-            phi_combos  = list(itertools.combinations(evt_phi[swap_mask], k))
-            m_combos    = list(itertools.combinations(evt_m[swap_mask], k))
-            btag_combos = list(itertools.combinations(evt_btag[swap_mask], k))
-            idx_combos  = list(itertools.combinations(evt_idx[swap_mask], k))
+            swap_n    = N_jets[swap_mask]
+            swap_pt   = evt_pt[swap_mask]
+            swap_eta  = evt_eta[swap_mask]
+            swap_phi  = evt_phi[swap_mask]
+            swap_m    = evt_m[swap_mask]
+            swap_btag = evt_btag[swap_mask]
+            swap_idx  = evt_idx[swap_mask]
+
+            jet_combos  = list(itertools.combinations(swap_n, k))
+            pt_combos   = list(itertools.combinations(swap_pt, k))
+            eta_combos  = list(itertools.combinations(swap_eta, k))
+            phi_combos  = list(itertools.combinations(swap_phi, k))
+            m_combos    = list(itertools.combinations(swap_m, k))
+            btag_combos = list(itertools.combinations(swap_btag, k))
+            idx_combos  = list(itertools.combinations(swap_idx, k))
             
             idx_array = np.array(())
 
             signal_flag = False
             for pt, eta, phi, m, btag, idx, jet_ind in zip(pt_combos, eta_combos, phi_combos, m_combos, btag_combos, idx_combos, jet_combos):
+                
 
                 # Check if the current combo idx is the same as the signal idx
                 # ic(idx, evt_idx[signal_mask])
@@ -392,20 +404,27 @@ class combos(TRSM):
                     # ic()
                 else:
                     # ic()
-                    # Save incorrect combo info
+                    # Save location of incorrect jets in evt arrays
                     bkgd_jets_in_combo = [ind for ind, sig_idx in zip(jet_ind,idx) if sig_idx == -1]
                     signal_jets_in_combo = [ind for ind, sig_idx in zip(jet_ind,idx) if sig_idx > -1]
+
                     swapped_sgnl_jets = np.logical_not(np.isin(signal_mask, signal_jets_in_combo))
+                    sgnl_ind = N_jets[signal_mask]
+                    sgnl_notin_combo = sgnl_ind[swapped_sgnl_jets]
+
+
+                    # ic(signal_mask, swapped_sgnl_jets)
+
+                    # raise KeyboardInterrupt
 
                     assert np.all(np.isin(bkgd_jets_in_combo, background_mask)), print(f"bkgd_jets_in_combo = {bkgd_jets_in_combo}\nbackground_mask = {background_mask}")
 
-                    swapped_bkgd_pt.append(evt_pt[bkgd_jets_in_combo])
                     swapped_bkgd_ind.append(N_jets[bkgd_jets_in_combo])
+                    swapped_bkgd_pt.append(evt_pt[bkgd_jets_in_combo])
                     swapped_bkgd_partonFlav.append(evt_partonFlav[bkgd_jets_in_combo])
-                    swapped_bkgd_hadronFlav.append(evt_hadronFlav[bkgd_jets_in_combo])
 
-                    swapped_sgnl_pt.append(evt_pt[signal_mask][swapped_sgnl_jets])
-                    swapped_sgnl_idx.append(evt_idx[signal_mask][swapped_sgnl_jets])
+                    swapped_sgnl_pt.append(evt_pt[sgnl_notin_combo])
+                    swapped_sgnl_idx.append(evt_idx[sgnl_notin_combo])
 
                     HX_b_mask = np.isin([0,1], idx)
                     H1_b_mask = np.isin([2,3], idx)
@@ -422,30 +441,55 @@ class combos(TRSM):
                     incorrect_H_bkgd_phi.append(evt_phi[bkgd_jets_in_combo])
                     incorrect_H_bkgd_m.append(evt_m[bkgd_jets_in_combo])
 
+                    temp_bkgd_p4 = vector.obj(pt=evt_pt[bkgd_jets_in_combo],
+                                              eta=evt_eta[bkgd_jets_in_combo],
+                                              phi=evt_phi[bkgd_jets_in_combo],
+                                              m=evt_m[bkgd_jets_in_combo])
+
                     if not HX_mask:
-                        HX_b_idx = np.array((0,1))[HX_b_mask] # which signal b
-                        HX_b_ind = np.argwhere(idx == HX_b_idx) # where is it in this combo
-                        # ic(HX_b_ind)
-                        incorrect_H_sgnl_pt.append(evt_pt[HX_b_ind])
-                        incorrect_H_sgnl_eta.append(evt_eta[HX_b_ind])
-                        incorrect_H_sgnl_phi.append(evt_phi[HX_b_ind])
-                        incorrect_H_sgnl_m.append(evt_m[HX_b_ind])
+                        HX_b_idx = np.array((0,1))[~HX_b_mask] # which signal b
+                        # ic(np.asarray(evt_idx) == HX_b_idx)
+                        # ic(idx)
+                        HX_b_ind = np.argwhere(evt_idx == HX_b_idx) # where is it in this combo
+                        # ic(HX_b_mask, HX_b_ind, HX_b_idx)
+                        temp_sgnl_pt = evt_pt[HX_b_ind]
+                        temp_sgnl_eta = evt_eta[HX_b_ind]
+                        temp_sgnl_phi = evt_phi[HX_b_ind]
+                        temp_sgnl_m = evt_m[HX_b_ind]
                     if not H1_mask:
-                        H1_b_idx = np.array((2,3))[H1_b_mask] # which signal b
-                        H1_b_ind = np.argwhere(idx == H1_b_idx) # where is it in this combo
-                        incorrect_H_sgnl_pt.append(evt_pt[H1_b_ind])
-                        incorrect_H_sgnl_eta.append(evt_eta[H1_b_ind])
-                        incorrect_H_sgnl_phi.append(evt_phi[H1_b_ind])
-                        incorrect_H_sgnl_m.append(evt_m[H1_b_ind])
+                        H1_b_idx = np.array((2,3))[~H1_b_mask] # which signal b
+                        H1_b_ind = np.argwhere(evt_idx == H1_b_idx) # where is it in this combo
+                        temp_sgnl_pt = evt_pt[H1_b_ind]
+                        temp_sgnl_eta = evt_eta[H1_b_ind]
+                        temp_sgnl_phi = evt_phi[H1_b_ind]
+                        temp_sgnl_m = evt_m[H1_b_ind]
                         # ic(H1_b_ind)
                     if not H2_mask:
-                        H2_b_idx = np.array((4,5))[H2_b_mask] # which signal b
-                        H2_b_ind = np.argwhere(idx == H2_b_idx) # where is it in this combo           
-                        incorrect_H_sgnl_pt.append(evt_pt[H2_b_ind])
-                        incorrect_H_sgnl_eta.append(evt_eta[H2_b_ind])
-                        incorrect_H_sgnl_phi.append(evt_phi[H2_b_ind])
-                        incorrect_H_sgnl_m.append(evt_m[H2_b_ind])
+                        H2_b_idx = np.array((4,5))[~H2_b_mask] # which signal b
+                        H2_b_ind = np.argwhere(evt_idx == H2_b_idx) # where is it in this combo           
+                        temp_sgnl_pt = evt_pt[H2_b_ind]
+                        temp_sgnl_eta = evt_eta[H2_b_ind]
+                        temp_sgnl_phi = evt_phi[H2_b_ind]
+                        temp_sgnl_m = evt_m[H2_b_ind]
                         # ic(H2_b_ind)
+                        
+                    incorrect_H_sgnl_pt.append(temp_sgnl_pt)
+                    incorrect_H_sgnl_eta.append(temp_sgnl_eta)
+                    incorrect_H_sgnl_phi.append(temp_sgnl_phi)
+                    incorrect_H_sgnl_m.append(temp_sgnl_m)
+
+                    temp_sgnl_p4 = vector.obj(pt=temp_sgnl_pt,
+                                              eta=temp_sgnl_eta,
+                                              phi=temp_sgnl_phi,
+                                              m=temp_sgnl_m)
+
+                    # raise
+                    if 0 in temp_bkgd_p4.deltaR(temp_sgnl_p4):
+                        ic(evt_idx)
+                        ic(bkgd_jets_in_combo, sgnl_notin_combo)
+                        ic(temp_sgnl_p4, temp_bkgd_p4)
+                        ic(temp_bkgd_p4.deltaR(temp_sgnl_p4))
+                        raise
                         
                         
                     sgnl_mask.append(False)
@@ -481,36 +525,41 @@ class combos(TRSM):
         incorrect_H_bkgd_eta = ak.Array(incorrect_H_bkgd_eta)
         incorrect_H_bkgd_phi = ak.Array(incorrect_H_bkgd_phi)
         incorrect_H_bkgd_m = ak.Array(incorrect_H_bkgd_m)
+
         incorrect_H_sgnl_pt = ak.Array(incorrect_H_sgnl_pt)
         incorrect_H_sgnl_eta = ak.Array(incorrect_H_sgnl_eta)
         incorrect_H_sgnl_phi = ak.Array(incorrect_H_sgnl_phi)
         incorrect_H_sgnl_m = ak.Array(incorrect_H_sgnl_m)
 
-        incorrect_sgnl_p4 = vector.obj(pt=incorrect_H_sgnl_pt,
+        self.incorrect_sgnl_p4 = vector.obj(pt=incorrect_H_sgnl_pt,
                                        eta=incorrect_H_sgnl_eta,
                                        phi=incorrect_H_sgnl_phi,
                                        m=incorrect_H_sgnl_m)
         # ic(incorrect_sgnl_p4)
-        incorrect_bkgd_p4 = vector.obj(pt=incorrect_H_bkgd_pt,
+        self.incorrect_bkgd_p4 = vector.obj(pt=incorrect_H_bkgd_pt,
                                        eta=incorrect_H_bkgd_eta,
                                        phi=incorrect_H_bkgd_phi,
                                        m=incorrect_H_bkgd_m)
         # ic(incorrect_bkgd_p4)
         
-        self.incorrect_H_p4 = incorrect_sgnl_p4 + incorrect_bkgd_p4
+        try:
+            self.incorrect_H_p4 = self.incorrect_sgnl_p4 + self.incorrect_bkgd_p4
+        except:
+            ic(self.incorrect_bkgd_p4, self.incorrect_sgnl_p4)
 
-        swapped_bkgd_ind = ak.Array(swapped_bkgd_ind)
-        self.swapped_bkgd_pt = ak.Array(swapped_bkgd_pt)
         swapped_bkgd_partonFlav = ak.Array(swapped_bkgd_partonFlav)
         swapped_bkgd_hadronFlav = ak.Array(swapped_bkgd_hadronFlav)
-
-        swapped_sgnl_idx = ak.Array(swapped_sgnl_idx)
+        swapped_bkgd_ind = ak.Array(swapped_bkgd_ind)
+        self.swapped_bkgd_pt = ak.Array(swapped_bkgd_pt)
         self.swapped_sgnl_pt = ak.Array(swapped_sgnl_pt)
+        swapped_sgnl_idx = ak.Array(swapped_sgnl_idx)
+        
+
 
         self.bkgd_dict = {'idx':swapped_sgnl_idx, 'ind':swapped_bkgd_ind, 'partonFlav':swapped_bkgd_partonFlav, 'hadronFlav':swapped_bkgd_hadronFlav}
 
         combos_builder = combo_builder.snapshot()
-        combo_evt_p4, boost_0, boost_1, boost_2, boost_3, boost_4, boost_5 = get_evt_p4(combos_builder)
+        self.sixjet_p4, boost_0, boost_1, boost_2, boost_3, boost_4, boost_5 = get_evt_p4(combos_builder)
         self.sgnl_mask = np.array((sgnl_mask))
 
         boosted = [boost_0, boost_1, boost_2, boost_3, boost_4, boost_5]
