@@ -318,6 +318,8 @@ class combos(TRSM):
         incorrect_H_sgnl_phi = []
         incorrect_H_sgnl_m = []
 
+        swapped_out_H = []
+
         combo_mask = []
 
         counter = 0
@@ -448,30 +450,34 @@ class combos(TRSM):
 
                     if not HX_mask:
                         HX_b_idx = np.array((0,1))[~HX_b_mask] # which signal b
-                        # ic(np.asarray(evt_idx) == HX_b_idx)
-                        # ic(idx)
                         HX_b_ind = np.argwhere(evt_idx == HX_b_idx) # where is it in this combo
-                        # ic(HX_b_mask, HX_b_ind, HX_b_idx)
+                        swapped_out_H.append(HX_b_idx)
+
                         temp_sgnl_pt = evt_pt[HX_b_ind]
                         temp_sgnl_eta = evt_eta[HX_b_ind]
                         temp_sgnl_phi = evt_phi[HX_b_ind]
                         temp_sgnl_m = evt_m[HX_b_ind]
+
                     if not H1_mask:
                         H1_b_idx = np.array((2,3))[~H1_b_mask] # which signal b
                         H1_b_ind = np.argwhere(evt_idx == H1_b_idx) # where is it in this combo
+                        swapped_out_H.append(H1_b_idx)
+
                         temp_sgnl_pt = evt_pt[H1_b_ind]
                         temp_sgnl_eta = evt_eta[H1_b_ind]
                         temp_sgnl_phi = evt_phi[H1_b_ind]
                         temp_sgnl_m = evt_m[H1_b_ind]
-                        # ic(H1_b_ind)
+
                     if not H2_mask:
                         H2_b_idx = np.array((4,5))[~H2_b_mask] # which signal b
-                        H2_b_ind = np.argwhere(evt_idx == H2_b_idx) # where is it in this combo           
+                        H2_b_ind = np.argwhere(evt_idx == H2_b_idx) # where is it in this combo
+                        swapped_out_H.append(H2_b_idx)
+                         
                         temp_sgnl_pt = evt_pt[H2_b_ind]
                         temp_sgnl_eta = evt_eta[H2_b_ind]
                         temp_sgnl_phi = evt_phi[H2_b_ind]
                         temp_sgnl_m = evt_m[H2_b_ind]
-                        # ic(H2_b_ind)
+
                         
                     incorrect_H_sgnl_pt.append(temp_sgnl_pt)
                     incorrect_H_sgnl_eta.append(temp_sgnl_eta)
@@ -520,6 +526,8 @@ class combos(TRSM):
             assert signal_flag, print(f"evt = {evt}\nn mask = {swap_mask}\nevt_idx[signal_mask] = {evt_idx[signal_mask]}\nidx_combos = {idx_combos}\nn_bkgd = {n_bkgd}")
 
         self.combo_mask = ak.Array(combo_mask)
+
+        self.swapped_out_H = ak.Array(swapped_out_H)
 
         incorrect_H_bkgd_pt = ak.Array(incorrect_H_bkgd_pt)
         incorrect_H_bkgd_eta = ak.Array(incorrect_H_bkgd_eta)
