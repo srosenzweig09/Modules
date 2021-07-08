@@ -85,12 +85,19 @@ class TRSM():
         self.H2_b1_m   = np_table['HY2_b1_recojet_m']
         self.H2_b2_m   = np_table['HY2_b2_recojet_m']
 
-        self.HX_b1_p4 = vector.obj(pt=self.HX_b1_pt, eta=self.HX_b1_eta, phi=self.HX_b1_phi, m=self.HX_b1_m)
-        self.HX_b2_p4 = vector.obj(pt=self.HX_b2_pt, eta=self.HX_b2_eta, phi=self.HX_b2_phi, m=self.HX_b2_m)
-        self.H1_b1_p4 = vector.obj(pt=self.H1_b1_pt, eta=self.H1_b1_eta, phi=self.H1_b1_phi, m=self.H1_b1_m)
-        self.H1_b2_p4 = vector.obj(pt=self.H1_b2_pt, eta=self.H1_b2_eta, phi=self.H1_b2_phi, m=self.H1_b2_m)
-        self.H2_b1_p4 = vector.obj(pt=self.H2_b1_pt, eta=self.H2_b1_eta, phi=self.H2_b1_phi, m=self.H2_b1_m)
-        self.H2_b2_p4 = vector.obj(pt=self.H2_b2_pt, eta=self.H2_b2_eta, phi=self.H2_b2_phi, m=self.H2_b2_m)
+        # self.HX_b1_p4 = vector.obj(pt=self.HX_b1_pt, eta=self.HX_b1_eta, phi=self.HX_b1_phi, m=self.HX_b1_m)
+        # self.HX_b2_p4 = vector.obj(pt=self.HX_b2_pt, eta=self.HX_b2_eta, phi=self.HX_b2_phi, m=self.HX_b2_m)
+        # self.H1_b1_p4 = vector.obj(pt=self.H1_b1_pt, eta=self.H1_b1_eta, phi=self.H1_b1_phi, m=self.H1_b1_m)
+        # self.H1_b2_p4 = vector.obj(pt=self.H1_b2_pt, eta=self.H1_b2_eta, phi=self.H1_b2_phi, m=self.H1_b2_m)
+        # self.H2_b1_p4 = vector.obj(pt=self.H2_b1_pt, eta=self.H2_b1_eta, phi=self.H2_b1_phi, m=self.H2_b1_m)
+        # self.H2_b2_p4 = vector.obj(pt=self.H2_b2_pt, eta=self.H2_b2_eta, phi=self.H2_b2_phi, m=self.H2_b2_m)
+
+        self.HX_b1_p4 = ak.Array({"pt":self.HX_b1_pt, "eta":self.HX_b1_eta, "phi":self.HX_b1_phi, "m":self.HX_b1_m}, with_name="Momentum4D")
+        self.HX_b2_p4 = ak.Array({"pt":self.HX_b2_pt, "eta":self.HX_b2_eta, "phi":self.HX_b2_phi, "m":self.HX_b2_m}, with_name="Momentum4D")
+        self.H1_b1_p4 = ak.Array({"pt":self.H1_b1_pt, "eta":self.H1_b1_eta, "phi":self.H1_b1_phi, "m":self.H1_b1_m}, with_name="Momentum4D")
+        self.H1_b2_p4 = ak.Array({"pt":self.H1_b2_pt, "eta":self.H1_b2_eta, "phi":self.H1_b2_phi, "m":self.H1_b2_m}, with_name="Momentum4D")
+        self.H2_b1_p4 = ak.Array({"pt":self.H2_b1_pt, "eta":self.H2_b1_eta, "phi":self.H2_b1_phi, "m":self.H2_b1_m}, with_name="Momentum4D")
+        self.H2_b2_p4 = ak.Array({"pt":self.H2_b2_pt, "eta":self.H2_b2_eta, "phi":self.H2_b2_phi, "m":self.H2_b2_m}, with_name="Momentum4D")
 
         self.HX_p4 = self.HX_b1_p4 + self.HX_b2_p4
         self.H1_p4 = self.H1_b1_p4 + self.H1_b2_p4
@@ -294,6 +301,13 @@ class combos(TRSM):
         self.HX_p4 = trsm.HX_p4
         self.H1_p4 = trsm.H1_p4
         self.H2_p4 = trsm.H2_p4
+
+        self.HX_b1_p4 = trsm.HX_b1_p4
+        self.HX_b2_p4 = trsm.HX_b2_p4
+        self.H1_b1_p4 = trsm.H1_b1_p4
+        self.H1_b2_p4 = trsm.H1_b2_p4
+        self.H2_b1_p4 = trsm.H2_b1_p4
+        self.H2_b2_p4 = trsm.H2_b2_p4
 
         k = 6 # 6 jets originating from X in our signal event
 
