@@ -7,6 +7,9 @@ This class sorts MC-generated events into an array of input features for use in 
 
 # from particle import Particle
 import awkward as ak
+import colorama
+colorama.init(autoreset=True)
+from colorama import Fore, Back
 from icecream import ic
 import itertools
 from math import comb
@@ -39,8 +42,6 @@ class TRSM():
 
     ## Open ROOT file
     def __init__(self, filename):
-
-        info(f"Opening ROOT file {filename} with columns")
 
         tree, ak_table, np_table = open_up(filename)
 
