@@ -1,3 +1,7 @@
+import colorama
+colorama.init(autoreset=True)
+from colorama import Fore, Back, Style
+
 from traceback import extract_stack
 from colors import H, W, FAIL
 
@@ -7,9 +11,9 @@ for x in extract_stack():
         break
 
 def info(string):
-    print(f"-- [INFO] -- {H}{filename}{W} -- " + string)
+    print(f"-- [INFO] -- {Fore.YELLOW}{filename}{Style.RESET_ALL} -- " + string)
     
 def error(string):
-    print(f"!! [{FAIL}ERROR{W}] !! {H}{filename}{W} -- " + string)
+    print(f"!! [{Fore.RED}ERROR{Style.RESET_ALL}] !! {Fore.YELLOW}{filename}{Style.RESET_ALL} -- " + string)
 
 

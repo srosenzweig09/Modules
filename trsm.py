@@ -15,8 +15,9 @@ import itertools
 from math import comb
 import numpy as np
 import random
-import vector
 import sys  # JAKE DELETE
+import uproot
+import vector
 
 from logger import info
 from myuproot import open_up
@@ -40,57 +41,147 @@ class TRSM():
 
     # b_mass = Particle.from_pdgid(5).mass / 1000 # Convert from MeV to GeV
 
+    def open_file(self, fileName, treeName='sixBtree'):
+
+        tree = uproot.open(fileName + ":" + treeName)
+
+        self.tree = tree
+        
+        self.jet_idx  = tree['jet_idx'].array(library='np')
+
+        # self.n_jet    = tree['n_jet'].array(library='np')
+        # self.n_sixb   = tree['nfound_sixb'].array(library='np')
+        self.jet_pt   = tree['jet_pt'].array(library='np')
+        self.jet_eta  = tree['jet_eta'].array(library='np')
+        self.jet_phi  = tree['jet_phi'].array(library='np')
+        self.jet_m    = tree['jet_m'].array(library='np')
+        self.jet_btag = tree['jet_btag'].array(library='np')
+        self.jet_qgl  = tree['jet_qgl'].array(library='np')
+        self.jet_partonFlav = tree['jet_partonFlav'].array(library='np')
+        self.jet_hadronFlav = tree['jet_hadronFlav'].array(library='np')
+
+        self.HX_b1_pt  = tree['gen_HX_b1_recojet_ptRegressed'].array(library='np')
+        self.HX_b2_pt  = tree['gen_HX_b2_recojet_ptRegressed'].array(library='np')
+        self.HX_b1_eta = tree['gen_HX_b1_recojet_eta'].array(library='np')
+        self.HX_b2_eta = tree['gen_HX_b2_recojet_eta'].array(library='np')
+        self.HX_b1_phi = tree['gen_HX_b1_recojet_phi'].array(library='np')
+        self.HX_b2_phi = tree['gen_HX_b2_recojet_phi'].array(library='np')
+        self.HX_b1_m   = tree['gen_HX_b1_recojet_m'].array(library='np')
+        self.HX_b2_m   = tree['gen_HX_b2_recojet_m'].array(library='np')
+        self.H1_b1_pt  = tree['gen_HY1_b1_recojet_ptRegressed'].array(library='np')
+        self.H1_b2_pt  = tree['gen_HY1_b2_recojet_ptRegressed'].array(library='np')
+        self.H1_b1_eta = tree['gen_HY1_b1_recojet_eta'].array(library='np')
+        self.H1_b2_eta = tree['gen_HY1_b2_recojet_eta'].array(library='np')
+        self.H1_b1_phi = tree['gen_HY1_b1_recojet_phi'].array(library='np')
+        self.H1_b2_phi = tree['gen_HY1_b2_recojet_phi'].array(library='np')
+        self.H1_b1_m   = tree['gen_HY1_b1_recojet_m'].array(library='np')
+        self.H1_b2_m   = tree['gen_HY1_b2_recojet_m'].array(library='np')
+        self.H2_b1_pt  = tree['gen_HY2_b1_recojet_ptRegressed'].array(library='np')
+        self.H2_b2_pt  = tree['gen_HY2_b2_recojet_ptRegressed'].array(library='np')
+        self.H2_b1_eta = tree['gen_HY2_b1_recojet_eta'].array(library='np')
+        self.H2_b2_eta = tree['gen_HY2_b2_recojet_eta'].array(library='np')
+        self.H2_b1_phi = tree['gen_HY2_b1_recojet_phi'].array(library='np')
+        self.H2_b2_phi = tree['gen_HY2_b2_recojet_phi'].array(library='np')
+        self.H2_b1_m   = tree['gen_HY2_b1_recojet_m'].array(library='np')
+        self.H2_b2_m   = tree['gen_HY2_b2_recojet_m'].array(library='np')
+
+        self.nevents = len(self.jet_pt)
+
+    def open_files(self, fileList, treeName='sixBtree'):
+
+        file1 = fileList[0]
+        tree = uproot.open(file1 + ":" + treeName)
+
+        self.jet_idx  = tree['jet_signalId'].array(library='np')
+
+        # self.n_jet    = tree['n_jet'].array(library='np')
+        # self.n_sixb   = tree['nfound_sixb'].array(library='np')
+        self.jet_pt   = tree['jet_pt'].array(library='np')
+        self.jet_eta  = tree['jet_eta'].array(library='np')
+        self.jet_phi  = tree['jet_phi'].array(library='np')
+        self.jet_m    = tree['jet_m'].array(library='np')
+        self.jet_btag = tree['jet_btag'].array(library='np')
+        self.jet_qgl  = tree['jet_qgl'].array(library='np')
+        self.jet_partonFlav = tree['jet_partonFlav'].array(library='np')
+        self.jet_hadronFlav = tree['jet_hadronFlav'].array(library='np')
+
+        self.HX_b1_pt  = tree['gen_HX_b1_recojet_ptRegressed'].array(library='np')
+        self.HX_b2_pt  = tree['gen_HX_b2_recojet_ptRegressed'].array(library='np')
+        self.HX_b1_eta = tree['gen_HX_b1_recojet_eta'].array(library='np')
+        self.HX_b2_eta = tree['gen_HX_b2_recojet_eta'].array(library='np')
+        self.HX_b1_phi = tree['gen_HX_b1_recojet_phi'].array(library='np')
+        self.HX_b2_phi = tree['gen_HX_b2_recojet_phi'].array(library='np')
+        self.HX_b1_m   = tree['gen_HX_b1_recojet_m'].array(library='np')
+        self.HX_b2_m   = tree['gen_HX_b2_recojet_m'].array(library='np')
+        self.H1_b1_pt  = tree['gen_HY1_b1_recojet_ptRegressed'].array(library='np')
+        self.H1_b2_pt  = tree['gen_HY1_b2_recojet_ptRegressed'].array(library='np')
+        self.H1_b1_eta = tree['gen_HY1_b1_recojet_eta'].array(library='np')
+        self.H1_b2_eta = tree['gen_HY1_b2_recojet_eta'].array(library='np')
+        self.H1_b1_phi = tree['gen_HY1_b1_recojet_phi'].array(library='np')
+        self.H1_b2_phi = tree['gen_HY1_b2_recojet_phi'].array(library='np')
+        self.H1_b1_m   = tree['gen_HY1_b1_recojet_m'].array(library='np')
+        self.H1_b2_m   = tree['gen_HY1_b2_recojet_m'].array(library='np')
+        self.H2_b1_pt  = tree['gen_HY2_b1_recojet_ptRegressed'].array(library='np')
+        self.H2_b2_pt  = tree['gen_HY2_b2_recojet_ptRegressed'].array(library='np')
+        self.H2_b1_eta = tree['gen_HY2_b1_recojet_eta'].array(library='np')
+        self.H2_b2_eta = tree['gen_HY2_b2_recojet_eta'].array(library='np')
+        self.H2_b1_phi = tree['gen_HY2_b1_recojet_phi'].array(library='np')
+        self.H2_b2_phi = tree['gen_HY2_b2_recojet_phi'].array(library='np')
+        self.H2_b1_m   = tree['gen_HY2_b1_recojet_m'].array(library='np')
+        self.H2_b2_m   = tree['gen_HY2_b2_recojet_m'].array(library='np')
+
+        for files in fileList[1:]:
+            tree = uproot.open(files + ":" + treeName)
+
+            self.jet_idx  = np.append(self.jet_idx, tree['jet_signalId'].array(library='np'))
+
+            # self.n_sixb   = np.append(self.n_sixb, tree['nfound_sixb'].array(library='np'))
+            # self.n_jet    = np.append(self.n_sixb, tree['n_jet'].array(library='np'))
+            self.jet_pt   = np.append(self.jet_pt, tree['jet_pt'].array(library='np'))
+            self.jet_eta  = np.append(self.jet_eta, tree['jet_eta'].array(library='np'))
+            self.jet_phi  = np.append(self.jet_phi, tree['jet_phi'].array(library='np'))
+            self.jet_m    = np.append(self.jet_m, tree['jet_m'].array(library='np'))
+            self.jet_btag = np.append(self.jet_btag, tree['jet_btag'].array(library='np'))
+            self.jet_qgl  = np.append(self.jet_qgl, tree['jet_qgl'].array(library='np'))
+            self.jet_partonFlav = np.append(self.jet_partonFlav, tree['jet_partonFlav'].array(library='np'))
+            self.jet_hadronFlav = np.append(self.jet_hadronFlav, tree['jet_hadronFlav'].array(library='np'))
+
+            self.HX_b1_pt  = np.append(self.HX_b1_pt, tree['gen_HX_b1_recojet_ptRegressed'].array(library='np'))
+            self.HX_b2_pt  = np.append(self.HX_b2_pt, tree['gen_HX_b2_recojet_ptRegressed'].array(library='np'))
+            self.HX_b1_eta = np.append(self.HX_b1_eta, tree['gen_HX_b1_recojet_eta'].array(library='np'))
+            self.HX_b2_eta = np.append(self.HX_b2_eta, tree['gen_HX_b2_recojet_eta'].array(library='np'))
+            self.HX_b1_phi = np.append(self.HX_b1_phi, tree['gen_HX_b1_recojet_phi'].array(library='np'))
+            self.HX_b2_phi = np.append(self.HX_b2_phi, tree['gen_HX_b2_recojet_phi'].array(library='np'))
+            self.HX_b1_m   = np.append(self.HX_b1_m, tree['gen_HX_b1_recojet_m'].array(library='np'))
+            self.HX_b2_m   = np.append(self.HX_b2_m, tree['gen_HX_b2_recojet_m'].array(library='np'))
+            self.H1_b1_pt  = np.append(self.H1_b1_pt, tree['gen_HY1_b1_recojet_ptRegressed'].array(library='np'))
+            self.H1_b2_pt  = np.append(self.H1_b2_pt, tree['gen_HY1_b2_recojet_ptRegressed'].array(library='np'))
+            self.H1_b1_eta = np.append(self.H1_b1_eta, tree['gen_HY1_b1_recojet_eta'].array(library='np'))
+            self.H1_b2_eta = np.append(self.H1_b2_eta, tree['gen_HY1_b2_recojet_eta'].array(library='np'))
+            self.H1_b1_phi = np.append(self.H1_b1_phi, tree['gen_HY1_b1_recojet_phi'].array(library='np'))
+            self.H1_b2_phi = np.append(self.H1_b2_phi, tree['gen_HY1_b2_recojet_phi'].array(library='np'))
+            self.H1_b1_m   = np.append(self.H1_b1_m, tree['gen_HY1_b1_recojet_m'].array(library='np'))
+            self.H1_b2_m   = np.append(self.H1_b2_m, tree['gen_HY1_b2_recojet_m'].array(library='np'))
+            self.H2_b1_pt  = np.append(self.H2_b1_pt, tree['gen_HY2_b1_recojet_ptRegressed'].array(library='np'))
+            self.H2_b2_pt  = np.append(self.H2_b2_pt, tree['gen_HY2_b2_recojet_ptRegressed'].array(library='np'))
+            self.H2_b1_eta = np.append(self.H2_b1_eta, tree['gen_HY2_b1_recojet_eta'].array(library='np'))
+            self.H2_b2_eta = np.append(self.H2_b2_eta, tree['gen_HY2_b2_recojet_eta'].array(library='np'))
+            self.H2_b1_phi = np.append(self.H2_b1_phi, tree['gen_HY2_b1_recojet_phi'].array(library='np'))
+            self.H2_b2_phi = np.append(self.H2_b2_phi, tree['gen_HY2_b2_recojet_phi'].array(library='np'))
+            self.H2_b1_m   = np.append(self.H2_b1_m, tree['gen_HY2_b1_recojet_m'].array(library='np'))
+            self.H2_b2_m   = np.append(self.H2_b2_m, tree['gen_HY2_b2_recojet_m'].array(library='np'))
+
+        self.nevents = len(self.H2_b2_m)
+
     ## Open ROOT file
-    def __init__(self, filename):
+    def __init__(self, filename, evan_preselections=True):
 
-        tree, ak_table, np_table = open_up(filename)
-
-        self.tree     = tree
-        self.ak_table = ak_table
-        self.np_table = np_table
-        self.nevents  = len(ak_table)
-
-        self.jet_idx  = np_table['jet_idx']
-        self.jet_pt   = np_table['jet_pt']
-        self.jet_eta  = np_table['jet_eta']
-        self.jet_phi  = np_table['jet_phi']
-        self.jet_m    = np_table['jet_m']
-        self.jet_btag = np_table['jet_btag']
-        self.jet_qgl  = np_table['jet_qgl']
-        self.jet_partonFlav = np_table['jet_partonFlav']
-        self.jet_hadronFlav = np_table['jet_hadronFlav']
-
-        self.HX_b1_pt  = np_table['HX_b1_recojet_ptRegressed']
-        self.HX_b2_pt  = np_table['HX_b2_recojet_ptRegressed']
-        self.HX_b1_eta = np_table['HX_b1_recojet_eta']
-        self.HX_b2_eta = np_table['HX_b2_recojet_eta']
-        self.HX_b1_phi = np_table['HX_b1_recojet_phi']
-        self.HX_b2_phi = np_table['HX_b2_recojet_phi']
-        self.HX_b1_m   = np_table['HX_b1_recojet_m']
-        self.HX_b2_m   = np_table['HX_b2_recojet_m']
-        self.H1_b1_pt  = np_table['HY1_b1_recojet_ptRegressed']
-        self.H1_b2_pt  = np_table['HY1_b2_recojet_ptRegressed']
-        self.H1_b1_eta = np_table['HY1_b1_recojet_eta']
-        self.H1_b2_eta = np_table['HY1_b2_recojet_eta']
-        self.H1_b1_phi = np_table['HY1_b1_recojet_phi']
-        self.H1_b2_phi = np_table['HY1_b2_recojet_phi']
-        self.H1_b1_m   = np_table['HY1_b1_recojet_m']
-        self.H1_b2_m   = np_table['HY1_b2_recojet_m']
-        self.H2_b1_pt  = np_table['HY2_b1_recojet_ptRegressed']
-        self.H2_b2_pt  = np_table['HY2_b2_recojet_ptRegressed']
-        self.H2_b1_eta = np_table['HY2_b1_recojet_eta']
-        self.H2_b2_eta = np_table['HY2_b2_recojet_eta']
-        self.H2_b1_phi = np_table['HY2_b1_recojet_phi']
-        self.H2_b2_phi = np_table['HY2_b2_recojet_phi']
-        self.H2_b1_m   = np_table['HY2_b1_recojet_m']
-        self.H2_b2_m   = np_table['HY2_b2_recojet_m']
-
-        # self.HX_b1_p4 = vector.obj(pt=self.HX_b1_pt, eta=self.HX_b1_eta, phi=self.HX_b1_phi, m=self.HX_b1_m)
-        # self.HX_b2_p4 = vector.obj(pt=self.HX_b2_pt, eta=self.HX_b2_eta, phi=self.HX_b2_phi, m=self.HX_b2_m)
-        # self.H1_b1_p4 = vector.obj(pt=self.H1_b1_pt, eta=self.H1_b1_eta, phi=self.H1_b1_phi, m=self.H1_b1_m)
-        # self.H1_b2_p4 = vector.obj(pt=self.H1_b2_pt, eta=self.H1_b2_eta, phi=self.H1_b2_phi, m=self.H1_b2_m)
-        # self.H2_b1_p4 = vector.obj(pt=self.H2_b1_pt, eta=self.H2_b1_eta, phi=self.H2_b1_phi, m=self.H2_b1_m)
-        # self.H2_b2_p4 = vector.obj(pt=self.H2_b2_pt, eta=self.H2_b2_eta, phi=self.H2_b2_phi, m=self.H2_b2_m)
+        if type(filename) == str:
+            self.open_file(filename)
+        elif type(filename) == list:
+            self.open_files(filename)
+        else:
+            raise
 
         self.HX_b1_p4 = ak.Array({"pt":self.HX_b1_pt, "eta":self.HX_b1_eta, "phi":self.HX_b1_phi, "m":self.HX_b1_m}, with_name="Momentum4D")
         self.HX_b2_p4 = ak.Array({"pt":self.HX_b2_pt, "eta":self.HX_b2_eta, "phi":self.HX_b2_phi, "m":self.HX_b2_m}, with_name="Momentum4D")
@@ -103,7 +194,7 @@ class TRSM():
         self.H1_p4 = self.H1_b1_p4 + self.H1_b2_p4
         self.H2_p4 = self.H2_b1_p4 + self.H2_b2_p4
 
-    def construct_features(self, combo_p4, combo_btag, boosted):
+    def construct_6j_features(self, combo_p4, combo_btag, boosted):
 
         inputs = []
 
@@ -121,13 +212,15 @@ class TRSM():
 
         return inputs
     
-class training(TRSM):
+class training_6j(TRSM):
     ## Build p4 for all events
     def __init__(self, trsm):
 
         signal_builder = ak.ArrayBuilder()
         bkgd_builder = ak.ArrayBuilder()
         
+        # self.n_jet          = trsm.n_jet
+        # self.n_sixb         = trsm.n_sixb
         jet_idx        = trsm.jet_idx
         jet_pt         = trsm.jet_pt
         jet_eta        = trsm.jet_eta
@@ -146,6 +239,8 @@ class training(TRSM):
         available_bkgd  = []
         n_background = []
 
+        combo_mask = []
+
         pass_count = 0
 
         info("Looping through events. This may take a few minutes.")
@@ -154,19 +249,27 @@ class training(TRSM):
             # signal and background masks
             signal_mask = [i for i,obj in enumerate(jet_idx[evt]) if obj > -1]
             signal_mask = np.array((signal_mask))
+            if len(signal_mask) != 6: 
+                combo_mask.append(False)
+                continue
             background_mask = [i for i,obj in enumerate(jet_idx[evt]) if obj == -1]
+            background_mask = np.array((background_mask))
+            if len(background_mask) == 0: 
+                combo_mask.append(False)
+                continue
             # background_mask = np.array((background_mask))
+
+            # Skip any events with duplicate matches (for now)
+            if len(np.unique(jet_idx[evt][signal_mask])) < len(jet_idx[evt][signal_mask]): continue
 
             # Cound the number of background jets
             n_bkgd = len(jet_pt[evt][background_mask])
 
             # Skip and events with less than 6 matching signal bs (for now)
-            if len(jet_pt[evt][signal_mask]) < 6: continue
+            if len(jet_pt[evt][signal_mask]) < 6: 
+                combo_mask.append(False)
+                continue
 
-            # Skip any events with duplicate matches (for now)
-            if len(np.unique(jet_idx[evt][signal_mask])) < len(jet_idx[evt][signal_mask]): continue
-            
-            if (n_bkgd < 1): continue
             pass_count += 1
             available_bkgd.append(n_bkgd)
             
@@ -254,6 +357,8 @@ class training(TRSM):
                             bkgd_builder.field("phi"); bkgd_builder.real(phi)
                             bkgd_builder.field("m"); bkgd_builder.real(m)
 
+            combo_mask.append(True)
+
         info(f"Number of events saved: {pass_count}")
 
         self.sgnl_p4 = signal_builder.snapshot()
@@ -267,27 +372,34 @@ class training(TRSM):
         self.bkgd_btag = np.array((background_btag))
         self.bkgd = np.array((available_bkgd))
 
+        self.combo_mask = np.asarray(combo_mask)
+
         self.n_bkgd = np.array((n_background))
 
-        self.inputs = self.construct_training_features()
+        self.inputs = self.construct_6j_training_features()
 
-    def construct_training_features(self):
+        sgnl_node_targets = np.concatenate((np.repeat(1, len(inputs)/2), np.repeat(0, len(inputs)/2)))
+        bkgd_node_targets = np.where(sgnl_node_targets == 1, 0, 1)
+        self.targets = np.column_stack((sgnl_node_targets, bkgd_node_targets))
 
-        sgnl_inputs = self.construct_features(self.sgnl_p4, self.signal_btag, self.sgnl_boosted)
+    def construct_6j_training_features(self):
 
-        bkgd_inputs = self.construct_features(self.bkgd_p4, self.bkgd_btag, self.bkgd_boosted)
+        sgnl_inputs = self.construct_6j_features(self.sgnl_p4, self.signal_btag, self.sgnl_boosted)
+
+        bkgd_inputs = self.construct_6j_features(self.bkgd_p4, self.bkgd_btag, self.bkgd_boosted)
 
         inputs = np.row_stack((sgnl_inputs, bkgd_inputs))
         print(f"Combined (sgnl + bkgd) input shape = {inputs.shape}")
 
         return inputs
     
-
-class combos(TRSM):
+class combos_6j(TRSM):
 
     def __init__(self, trsm, n):
         combo_builder = ak.ArrayBuilder()
 
+        # n_jet    = trsm.n_jet
+        # n_sixb   = trsm.n_sixb
         self.jet_idx  = trsm.jet_idx
         self.jet_pt   = trsm.jet_pt
         self.jet_eta  = trsm.jet_eta
@@ -308,6 +420,8 @@ class combos(TRSM):
         self.H1_b2_p4 = trsm.H1_b2_p4
         self.H2_b1_p4 = trsm.H2_b1_p4
         self.H2_b2_p4 = trsm.H2_b2_p4
+
+        self.nevents = trsm.nevents
 
         k = 6 # 6 jets originating from X in our signal event
 
@@ -337,6 +451,8 @@ class combos(TRSM):
 
         combo_mask = []
 
+        combo_H_mask = np.ones((trsm.nevents, 3)).astype(bool)
+
         counter = 0
         
         for evt in tqdm(range(trsm.nevents)):
@@ -360,6 +476,7 @@ class combos(TRSM):
 
             # Cound the number of background jets
             n_bkgd = len(evt_pt[background_mask])
+
 
             # Skip and events with less than 6 matching signal bs (for now)
             if len(signal_mask) < k: 
@@ -406,6 +523,7 @@ class combos(TRSM):
             m_combos    = list(itertools.combinations(swap_m, k))
             btag_combos = list(itertools.combinations(swap_btag, k))
             idx_combos  = list(itertools.combinations(swap_idx, k))
+            self.idx_combos = idx_combos
             
             idx_array = np.array(())
 
@@ -462,8 +580,9 @@ class combos(TRSM):
                                               eta=evt_eta[bkgd_jets_in_combo],
                                               phi=evt_phi[bkgd_jets_in_combo],
                                               m=evt_m[bkgd_jets_in_combo])
-
+                                              
                     if not HX_mask:
+                        combo_H_mask[evt, 0] = False
                         HX_b_idx = np.array((0,1))[~HX_b_mask] # which signal b
                         HX_b_ind = np.argwhere(evt_idx == HX_b_idx) # where is it in this combo
                         swapped_out_H.append(HX_b_idx)
@@ -474,6 +593,7 @@ class combos(TRSM):
                         temp_sgnl_m = evt_m[HX_b_ind]
 
                     if not H1_mask:
+                        combo_H_mask[evt, 1] = False
                         H1_b_idx = np.array((2,3))[~H1_b_mask] # which signal b
                         H1_b_ind = np.argwhere(evt_idx == H1_b_idx) # where is it in this combo
                         swapped_out_H.append(H1_b_idx)
@@ -484,6 +604,7 @@ class combos(TRSM):
                         temp_sgnl_m = evt_m[H1_b_ind]
 
                     if not H2_mask:
+                        combo_H_mask[evt, 2] = False
                         H2_b_idx = np.array((4,5))[~H2_b_mask] # which signal b
                         H2_b_ind = np.argwhere(evt_idx == H2_b_idx) # where is it in this combo
                         swapped_out_H.append(H2_b_idx)
@@ -492,7 +613,6 @@ class combos(TRSM):
                         temp_sgnl_eta = evt_eta[H2_b_ind]
                         temp_sgnl_phi = evt_phi[H2_b_ind]
                         temp_sgnl_m = evt_m[H2_b_ind]
-
                         
                     incorrect_H_sgnl_pt.append(temp_sgnl_pt)
                     incorrect_H_sgnl_eta.append(temp_sgnl_eta)
@@ -541,7 +661,6 @@ class combos(TRSM):
             assert signal_flag, print(f"evt = {evt}\nn mask = {swap_mask}\nevt_idx[signal_mask] = {evt_idx[signal_mask]}\nidx_combos = {idx_combos}\nn_bkgd = {n_bkgd}")
 
         self.combo_mask = ak.Array(combo_mask)
-
         self.swapped_out_H = ak.Array(swapped_out_H)
 
         incorrect_H_bkgd_pt = ak.Array(incorrect_H_bkgd_pt)
@@ -577,8 +696,6 @@ class combos(TRSM):
         self.swapped_sgnl_pt = ak.Array(swapped_sgnl_pt)
         swapped_sgnl_idx = ak.Array(swapped_sgnl_idx)
         
-
-
         self.bkgd_dict = {'idx':swapped_sgnl_idx, 'ind':swapped_bkgd_ind, 'partonFlav':swapped_bkgd_partonFlav, 'hadronFlav':swapped_bkgd_hadronFlav}
 
         combos_builder = combo_builder.snapshot()
@@ -587,7 +704,7 @@ class combos(TRSM):
 
         boosted = [boost_0, boost_1, boost_2, boost_3, boost_4, boost_5]
 
-        self.combo_features = self.construct_features(combos_builder, combos_btag, boosted)
+        self.combo_features = self.construct_6j_features(combos_builder, combos_btag, boosted)
 
         assert len(sgnl_mask) == counter*comb(n,k), print(len(sgnl_mask), counter*comb(n,k))
         assert np.sum(sgnl_mask) == counter, print(np.sum(sgnl_mask*1),counter, sgnl_mask)
@@ -595,3 +712,38 @@ class combos(TRSM):
         print(f"Total events chosen: {counter}")
         
 
+class pairs_2j(combos_6j):
+
+    def __init__(self, combo_6j):
+        # combo_builder = ak.ArrayBuilder()
+
+        self.jet_idx  = combo_6.jet_idx
+        assert len(jet_idx) == 6, print("ERROR: Must input combos of 6 jets!")
+        self.jet_pt   = combo_6.jet_pt
+        self.jet_eta  = combo_6.jet_eta
+        self.jet_phi  = combo_6.jet_phi
+        self.jet_m    = combo_6.jet_m
+        self.jet_btag = combo_6.jet_btag
+        self.jet_qgl  = combo_6.jet_qgl
+        self.jet_partonFlav = combo_6.jet_partonFlav
+        self.jet_hadronFlav = combo_6.jet_hadronFlav
+
+        self.HX_p4 = combo_6.HX_p4
+        self.H1_p4 = combo_6.H1_p4
+        self.H2_p4 = combo_6.H2_p4
+
+        self.HX_b1_p4 = combo_6.HX_b1_p4
+        self.HX_b2_p4 = combo_6.HX_b2_p4
+        self.H1_b1_p4 = combo_6.H1_b1_p4
+        self.H1_b2_p4 = combo_6.H1_b2_p4
+        self.H2_b1_p4 = combo_6.H2_b1_p4
+        self.H2_b2_p4 = combo_6.H2_b2_p4
+
+        combo_ind  = list(itertools.combinations(np.arange(6), 2))
+        for evt in tqdm(range(combo_6j.nevents)):
+            for ind in combo_ind:
+                jet1_ind = ind[0]
+                jet2_ind = ind[1]
+
+                break
+            break
