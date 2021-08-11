@@ -227,7 +227,7 @@ class TRSM():
 
 class training_6j(TRSM):
     ## Build p4 for all events
-    @jit()
+    @jit(forceobj=True)
     def __init__(self, trsm):
 
         signal_builder = ak.ArrayBuilder()
@@ -337,8 +337,8 @@ class training_6j(TRSM):
         self.sgnl_p4 = signal_builder.snapshot()
         self.bkgd_p4 = bkgd_builder.snapshot()
 
-        self.sgnl_evt_p4, *self.sgnl_boosted = get_6jet_p4(self.sgnl_p4)
-        self.bkgd_evt_p4, *self.bkgd_boosted = get_6jet_p4(self.bkgd_p4)
+        self.sgnl_evt_p4, self.sgnl_boosted = get_6jet_p4(self.sgnl_p4)
+        self.bkgd_evt_p4, self.bkgd_boosted = get_6jet_p4(self.bkgd_p4)
 
         # self.signal_idx = np.array((signal_idx))
         self.signal_btag = np.array((signal_btag))
@@ -349,9 +349,9 @@ class training_6j(TRSM):
         bkgd_inputs = self.construct_6j_features(self.bkgd_p4, self.bkgd_btag, self.bkgd_boosted)
 
         self.inputs = np.row_stack((sgnl_inputs, bkgd_inputs))
-        print(f"Combined (sgnl + bkgd) input shape = {inputs.shape}")
+        print("Combined (sgnl + bkgd) input shape =",self.inputs.shape)
 
-        sgnl_node_targets = np.concatenate((np.repeat(1, len(inputs)/2), np.repeat(0, len(inputs)/2)))
+        sgnl_node_targets = np.concatenate((np.repeat(1, len(self.inputs)/2), np.repeat(0, len(self.inputs)/2)))
         bkgd_node_targets = np.where(sgnl_node_targets == 1, 0, 1)
         self.targets = np.column_stack((sgnl_node_targets, bkgd_node_targets))
 
