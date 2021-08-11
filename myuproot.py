@@ -12,7 +12,7 @@ def unfiltered_tree(tree):
     ak_dict = tree.arrays()
     keys     = tree.keys()
     n        = len(keys)
-    nevents  = len(table)
+    nevents  = len(ak_dict)
     np_dict = tree.arrays(library='np')
 
     ncols = 3
